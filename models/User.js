@@ -1,5 +1,5 @@
+import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
-
 
 
 const userSchema = mongoose.Schema( {
@@ -30,6 +30,19 @@ const userSchema = mongoose.Schema( {
     timestamps: true
 } );
 
-const User = mongoose.model( "User", userSchema );
+userSchema.pre( 'save', async function ( next )
+{
+    if ( !this.isModified( 'password' ) ) next();
 
+    const salt = await bcrypt.genSalt( 10 );
+    this.password = await bcrypt.hash( this.password, salt );
+} );
+
+userSchema.methods.verifyPassword = async function ( passwordFormulario )
+{
+    return await bcrypt.compare( passwordFormulario, this.password );
+};
+
+
+const User = mongoose.model( "User", userSchema );
 export default User;
